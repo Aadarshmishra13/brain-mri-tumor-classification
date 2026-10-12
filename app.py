@@ -94,7 +94,7 @@ uploaded_file = st.file_uploader(
     type=["png", "jpg", "jpeg"]
 )
 
-```python
+
 if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file).convert("RGB")
@@ -165,7 +165,7 @@ if uploaded_file is not None:
 
     except Exception as error:
         st.error(f"Could not process this image: {error}")
-```
+
 st.divider()
 st.caption(
     "Research/educational use only. Performance on uploaded images "
