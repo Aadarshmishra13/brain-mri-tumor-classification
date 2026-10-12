@@ -59,7 +59,7 @@ PROJECT_PATH = "."
 MODEL_FILES = {
     "EfficientNetB0 (recommended)": "fine_tuned_efficientnetb0.keras",
 }
-```
+
 
 CLASS_NAMES = ["glioma", "meningioma", "notumor", "pituitary"]
 
