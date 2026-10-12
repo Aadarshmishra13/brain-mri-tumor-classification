@@ -1,0 +1,2 @@
+Model,Test Accuracy,Test Loss,Macro Precision,Macro Recall,Macro F1-Score,Macro ROC-AUC
+Fine-Tuned EfficientNetB0,92.94,0.4298,93.14,92.94,92.78,0.982396

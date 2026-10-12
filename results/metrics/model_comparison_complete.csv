@@ -1,0 +1,4 @@
+Model,Test Accuracy (%),Test Loss,Macro Precision (%),Macro Recall (%),Macro F1-Score (%),Macro ROC-AUC
+Retrained Custom CNN,70.81,Not recalculated,69.54,70.81,68.87,0.899814
+Fine-Tuned ResNet50,91.56,0.5102,91.99,91.56,91.41,0.982682
+Fine-Tuned EfficientNetB0,92.94,0.4298,93.14,92.94,92.78,0.982396

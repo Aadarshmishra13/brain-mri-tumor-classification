@@ -1,0 +1,4 @@
+Model,Total parameters,Trainable parameters,Non-trainable parameters,Model file size (MB),Input shape,Output shape
+Custom CNN,110276,110276,0.0,1.31,"(None, 224, 224, 3)","(None, 4)"
+ResNet50 (fine-tuned),23850500,15216260,8634240.0,207.72,"(None, 224, 224, 3)","(None, 4)"
+EfficientNetB0 (fine-tuned),4214055,3219104,994951.0,41.47,"(None, 224, 224, 3)","(None, 4)"

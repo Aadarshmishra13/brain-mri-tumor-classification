@@ -1,0 +1,5 @@
+Model,Test Accuracy (%),Test Loss
+Original Custom CNN,67.81,1.0323
+Retrained Custom CNN,70.81,0.9278
+Fine-Tuned ResNet50,91.56,0.5102
+Fine-Tuned EfficientNetB0,92.94,0.4298

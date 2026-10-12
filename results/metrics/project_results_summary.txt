@@ -1,0 +1,57 @@
+BRAIN TUMOR MRI CLASSIFICATION — PROJECT RESULTS
+
+Dataset:
+Brain Tumor MRI images with four classes:
+glioma, meningioma, notumor, pituitary.
+
+Models evaluated:
+1. Custom CNN
+2. Fine-Tuned ResNet50
+3. Fine-Tuned EfficientNetB0
+
+TEST RESULTS
+
+Custom CNN
+- Test Accuracy: 70.81%
+- Test Loss: 0.9278
+- Macro Precision: 69.54%
+- Macro Recall: 70.81%
+- Macro F1-Score: 68.87%
+- Macro ROC-AUC: 0.8998
+
+Fine-Tuned ResNet50
+- Test Accuracy: 91.56%
+- Test Loss: 0.5102
+- Macro Precision: 91.99%
+- Macro Recall: 91.56%
+- Macro F1-Score: 91.41%
+- Macro ROC-AUC: 0.9827
+
+Fine-Tuned EfficientNetB0
+- Test Accuracy: 92.94%
+- Test Loss: 0.4298
+- Macro Precision: 93.14%
+- Macro Recall: 92.94%
+- Macro F1-Score: 92.78%
+- Macro ROC-AUC: 0.9824
+
+MAIN FINDING
+EfficientNetB0 achieved the highest test accuracy and macro F1-score
+among the three evaluated models. ResNet50 had a slightly higher
+macro ROC-AUC.
+
+INTERPRETABILITY
+Grad-CAM visualizations were generated for selected correctly
+classified and misclassified examples.
+
+LIMITATIONS
+- Results apply to the evaluated dataset and split.
+- Performance on external hospitals, scanners, and patient populations
+  has not been established.
+- Grad-CAM visualizations are qualitative and do not prove that a
+  model uses medically valid features.
+- This project is educational and is not a clinically validated
+  diagnostic system.
+
+Saved comparison file:
+final_model_metrics_comparison.csv

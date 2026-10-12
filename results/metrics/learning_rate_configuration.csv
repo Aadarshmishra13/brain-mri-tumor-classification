@@ -1,0 +1,6 @@
+model,training_stage,learning_rate
+Custom CNN,Initial training,0.001
+ResNet50,Initial training,0.001
+ResNet50,Fine-tuning,1e-05
+EfficientNetB0,Initial training,0.001
+EfficientNetB0,Fine-tuning,1e-05

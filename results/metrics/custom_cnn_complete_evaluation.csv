@@ -1,0 +1,2 @@
+Model,Test Accuracy (%),Test Loss,Macro Precision (%),Macro Recall (%),Macro F1-Score (%),Macro ROC-AUC
+Retrained Custom CNN,70.81,Not recalculated,69.54,70.81,68.87,0.899814

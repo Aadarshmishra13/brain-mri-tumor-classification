@@ -1,0 +1,6 @@
+Class,ROC_AUC
+glioma,0.9545937499999999
+meningioma,0.9779875
+notumor,0.99870625
+pituitary,0.9994416666666667
+Macro Average,0.9826822916666667
