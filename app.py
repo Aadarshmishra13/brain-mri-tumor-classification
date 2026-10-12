@@ -55,7 +55,7 @@ st.markdown("""
 
 PROJECT_PATH = "."
 
-```python
+
 MODEL_FILES = {
     "EfficientNetB0 (recommended)": "fine_tuned_efficientnetb0.keras",
 }
