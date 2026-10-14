@@ -8,3 +8,4 @@ Pillow
 kagglehub
 streamlit
 opencv-python-headless
+huggingface_hub
