@@ -407,7 +407,7 @@ brain-mri-tumor-classification/
 
 The project includes a Streamlit application that allows users to upload an MRI image and view the trained EfficientNetB0 model's predicted class and confidence scores.
 
-**[Open the live Brain Tumor MRI Classifier](https://brain-mri-tumor-classification-ntpgnptwbovxsfbnfyvup.streamlit.app)**
+**[Open the live Brain Tumor MRI Classifier](https://brain-mri-tumor-classification-ntpgnptwbovxsfbnfyyjup.streamlit.app)**
 
 
 ### Application capabilities
