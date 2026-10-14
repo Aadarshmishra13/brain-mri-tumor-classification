@@ -115,78 +115,90 @@ def predict_probabilities(model, image, model_name):
 # --------------------------------------------------
 # GRAD-CAM HELPERS
 # --------------------------------------------------
-def find_last_conv_layer(model):
-    """Find a convolution layer, including nested backbones."""
-    for layer in reversed(model.layers):
-        if isinstance(layer, tf.keras.Model):
-            found = find_last_conv_layer(layer)
-            if found is not None:
-                return layer.name, found
-
-        if isinstance(layer, tf.keras.layers.Conv2D):
-            return None, layer.name
-
-    return None
-
 
 def make_gradcam_heatmap(model, image, model_name, class_index):
-    """
-    Best-effort Grad-CAM for models with a discoverable convolution layer.
-    Returns None if the model graph does not support this approach.
-    """
+    """Generate Grad-CAM for a CNN or a transfer-learning model."""
     try:
-        layer_info = find_last_conv_layer(model)
-        if layer_info is None:
-            return None
-
-        nested_name, conv_name = layer_info
-
-        target_model = model
-        if nested_name is not None:
-            target_model = model.get_layer(nested_name)
-
-        conv_layer = target_model.get_layer(conv_name)
-
-        # For nested backbones, construct a feature extractor from the
-        # backbone input to its last convolutional output.
-        feature_model = tf.keras.Model(
-            inputs=target_model.inputs,
-            outputs=conv_layer.output,
-        )
-
         image_batch = prepare_image(image, model_name)
         input_tensor = tf.convert_to_tensor(image_batch)
 
-        # This direct feature-extractor route is supported for a plain
-        # CNN. Nested transfer-learning models can have graph connections
-        # that prevent this simple route, so handle failure gracefully.
-        with tf.GradientTape() as tape:
-            features = feature_model(input_tensor, training=False)
-            tape.watch(features)
+        # Find the last convolution layer, including nested backbones.
+        def find_conv(container):
+            for layer in reversed(container.layers):
+                if isinstance(layer, tf.keras.layers.Conv2D):
+                    return container, layer
+                if isinstance(layer, tf.keras.Model):
+                    result = find_conv(layer)
+                    if result is not None:
+                        return result
+            return None
 
-            # Use the trained model's predicted class as target.
-            predictions = model(input_tensor, training=False)
-            score = predictions[:, class_index]
+        found = find_conv(model)
+        if found is None:
+            return None
 
-        gradients = tape.gradient(score, features)
+        container, conv_layer = found
+
+        # Standard CNN: obtain activations and predictions in one graph.
+        if container is model:
+            grad_model = tf.keras.Model(
+                inputs=model.inputs,
+                outputs=[conv_layer.output, model.output],
+            )
+
+            with tf.GradientTape() as tape:
+                activations, predictions = grad_model(
+                    input_tensor, training=False
+                )
+                score = predictions[:, class_index]
+
+        else:
+            # Transfer-learning model: run the backbone to obtain both
+            # convolutional activations and its final feature output.
+            backbone = container
+            backbone_cam = tf.keras.Model(
+                inputs=backbone.inputs,
+                outputs=[conv_layer.output, backbone.output],
+            )
+
+            with tf.GradientTape() as tape:
+                activations, features = backbone_cam(
+                    input_tensor, training=False
+                )
+
+                x = features
+                passed_backbone = False
+
+                for layer in model.layers:
+                    if layer is backbone:
+                        passed_backbone = True
+                        continue
+                    if passed_backbone:
+                        x = layer(x, training=False)
+
+                predictions = x
+                score = predictions[:, class_index]
+
+        gradients = tape.gradient(score, activations)
         if gradients is None:
             return None
 
         weights = tf.reduce_mean(gradients, axis=(1, 2))
-        feature_map = features[0]
-        weights = weights[0]
-
         heatmap = tf.reduce_sum(
-            feature_map * weights[tf.newaxis, tf.newaxis, :],
+            activations[0] * weights[0][tf.newaxis, tf.newaxis, :],
             axis=-1,
         )
+
         heatmap = tf.maximum(heatmap, 0)
         maximum = tf.reduce_max(heatmap)
+        heatmap = heatmap / (
+            maximum + tf.keras.backend.epsilon()
+        )
 
-        heatmap = heatmap / (maximum + tf.keras.backend.epsilon())
         return heatmap.numpy()
 
-    except Exception:
+    except Exception as error:
+        print(f"Grad-CAM error for {model_name}: {error}")
         return None
 
 
@@ -197,30 +209,37 @@ def display_gradcam(model, image, model_name, class_index):
 
     if heatmap is None:
         st.info(
-            "Live Grad-CAM could not be generated for this model's "
-            "architecture. You can still view the prediction and "
-            "the precomputed Grad-CAM images in the project repository."
+            f"Grad-CAM could not be generated for {model_name}. "
+            "The model prediction is still available above."
         )
-        return
+        return None
 
     heatmap_image = Image.fromarray(
         np.uint8(255 * heatmap)
     ).resize(image.size)
 
-    base = np.asarray(image.convert("RGB"), dtype=np.float32)
-    heat = np.asarray(heatmap_image, dtype=np.float32) / 255.0
+    base = np.asarray(
+        image.convert("RGB"), dtype=np.float32
+    )
+    heat = np.asarray(
+        heatmap_image, dtype=np.float32
+    ) / 255.0
 
-    # Create a simple red-yellow heat overlay.
     colored = np.zeros_like(base)
-    colored[..., 0] = np.clip(255 * heat, 0, 255)
-    colored[..., 1] = np.clip(180 * heat, 0, 255)
+    colored[..., 0] = 255 * heat
+    colored[..., 1] = 180 * heat
 
-    overlay = np.clip(0.55 * base + 0.45 * colored, 0, 255)
+    overlay = np.clip(
+        0.55 * base + 0.45 * colored, 0, 255
+    ).astype(np.uint8)
+
     st.image(
-        overlay.astype(np.uint8),
+        overlay,
         caption=f"Grad-CAM overlay — {model_name}",
         use_container_width=True,
     )
+
+    return heatmap
 
 
 # --------------------------------------------------
