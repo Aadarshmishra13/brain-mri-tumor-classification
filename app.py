@@ -1,173 +1,442 @@
+```python
+import os
+import tempfile
 
-import streamlit as st
 import numpy as np
+import pandas as pd
+import streamlit as st
 import tensorflow as tf
-from PIL import Image
+import matplotlib.pyplot as plt
 
+from PIL import Image
+from huggingface_hub import hf_hub_download
+
+
+# --------------------------------------------------
+# PAGE CONFIGURATION
+# --------------------------------------------------
 st.set_page_config(
-    page_title="Brain Tumor MRI Classifier",
+    page_title="Brain Tumor MRI Analysis",
     page_icon="🧠",
-    layout="wide"
+    layout="wide",
 )
 
 st.markdown("""
 <style>
-    .stApp {
-        background: linear-gradient(135deg, #0b1220, #101c2d, #0b1220);
-        color: #e5edf7;
-    }
-
-    h1, h2, h3 {
-        color: #f1f7ff;
-        letter-spacing: -0.5px;
-    }
-
-    p, label {
-        color: #c7d5e5;
-    }
-
-    div[data-testid="stFileUploader"] {
-        background: #142438;
-        border: 1px dashed #2dd4bf;
-        border-radius: 14px;
-        padding: 18px;
-    }
-
-    div[data-baseweb="select"] > div {
-        background-color: #142438;
-        border-color: #2dd4bf;
-        border-radius: 10px;
-    }
-
-    div[data-testid="stAlert"] {
-        border-radius: 12px;
-    }
-
-    hr {
-        border-color: #26384d;
-    }
-
-    footer {
-        visibility: hidden;
-    }
+.stApp {
+    background: linear-gradient(135deg, #09111f, #111d30, #09111f);
+    color: #e5edf7;
+}
+h1, h2, h3 { color: #f1f7ff; }
+p, label { color: #c7d5e5; }
+div[data-testid="stMetric"] {
+    background: #142438;
+    padding: 16px;
+    border: 1px solid #26384d;
+    border-radius: 12px;
+}
+div[data-testid="stFileUploader"] {
+    background: #142438;
+    border: 1px dashed #2dd4bf;
+    border-radius: 14px;
+    padding: 14px;
+}
+hr { border-color: #26384d; }
+footer { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
-PROJECT_PATH = "."
 
+# --------------------------------------------------
+# CONFIGURATION
+# --------------------------------------------------
+REPO_ID = "Aadarshmish/brain-tumor-mri-models"
 
 MODEL_FILES = {
-    "EfficientNetB0 (recommended)": "fine_tuned_efficientnetb0.keras",
+    "Custom CNN": "best_cnn.keras",
+    "ResNet50": "fine_tuned_resnet50.keras",
+    "EfficientNetB0": "fine_tuned_efficientnetb0.keras",
 }
 
-
 CLASS_NAMES = ["glioma", "meningioma", "notumor", "pituitary"]
+IMAGE_SIZE = (224, 224)
 
+
+# --------------------------------------------------
+# LOAD MODELS
+# --------------------------------------------------
+@st.cache_resource(show_spinner=False)
+def load_model(model_name):
+    model_path = hf_hub_download(
+        repo_id=REPO_ID,
+        filename=MODEL_FILES[model_name],
+    )
+    return tf.keras.models.load_model(
+        model_path,
+        compile=False,
+    )
+
+
+def prepare_image(image, model_name):
+    resized = image.convert("RGB").resize(IMAGE_SIZE)
+    array = np.asarray(resized, dtype=np.float32)
+    batch = np.expand_dims(array, axis=0)
+
+    if model_name == "Custom CNN":
+        return batch / 255.0
+
+    if model_name == "ResNet50":
+        return tf.keras.applications.resnet50.preprocess_input(
+            batch.copy()
+        )
+
+    # EfficientNetB0 includes rescaling in this trained model.
+    return batch
+
+
+def predict_probabilities(model, image, model_name):
+    model_input = prepare_image(image, model_name)
+    probabilities = np.asarray(
+        model.predict(model_input, verbose=0)[0]
+    ).reshape(-1)
+
+    if len(probabilities) != len(CLASS_NAMES):
+        raise ValueError(
+            f"{model_name} returned {len(probabilities)} outputs; "
+            f"expected {len(CLASS_NAMES)}."
+        )
+
+    if not np.all(np.isfinite(probabilities)):
+        raise ValueError(f"{model_name} returned invalid probabilities.")
+
+    return probabilities
+
+
+# --------------------------------------------------
+# GRAD-CAM HELPERS
+# --------------------------------------------------
+def find_last_conv_layer(model):
+    """Find a convolution layer, including nested backbones."""
+    for layer in reversed(model.layers):
+        if isinstance(layer, tf.keras.Model):
+            found = find_last_conv_layer(layer)
+            if found is not None:
+                return layer.name, found
+
+        if isinstance(layer, tf.keras.layers.Conv2D):
+            return None, layer.name
+
+    return None
+
+
+def make_gradcam_heatmap(model, image, model_name, class_index):
+    """
+    Best-effort Grad-CAM for models with a discoverable convolution layer.
+    Returns None if the model graph does not support this approach.
+    """
+    try:
+        layer_info = find_last_conv_layer(model)
+        if layer_info is None:
+            return None
+
+        nested_name, conv_name = layer_info
+
+        target_model = model
+        if nested_name is not None:
+            target_model = model.get_layer(nested_name)
+
+        conv_layer = target_model.get_layer(conv_name)
+
+        # For nested backbones, construct a feature extractor from the
+        # backbone input to its last convolutional output.
+        feature_model = tf.keras.Model(
+            inputs=target_model.inputs,
+            outputs=conv_layer.output,
+        )
+
+        image_batch = prepare_image(image, model_name)
+        input_tensor = tf.convert_to_tensor(image_batch)
+
+        # This direct feature-extractor route is supported for a plain
+        # CNN. Nested transfer-learning models can have graph connections
+        # that prevent this simple route, so handle failure gracefully.
+        with tf.GradientTape() as tape:
+            features = feature_model(input_tensor, training=False)
+            tape.watch(features)
+
+            # Use the trained model's predicted class as target.
+            predictions = model(input_tensor, training=False)
+            score = predictions[:, class_index]
+
+        gradients = tape.gradient(score, features)
+        if gradients is None:
+            return None
+
+        weights = tf.reduce_mean(gradients, axis=(1, 2))
+        feature_map = features[0]
+        weights = weights[0]
+
+        heatmap = tf.reduce_sum(
+            feature_map * weights[tf.newaxis, tf.newaxis, :],
+            axis=-1,
+        )
+        heatmap = tf.maximum(heatmap, 0)
+        maximum = tf.reduce_max(heatmap)
+
+        heatmap = heatmap / (maximum + tf.keras.backend.epsilon())
+        return heatmap.numpy()
+
+    except Exception:
+        return None
+
+
+def display_gradcam(model, image, model_name, class_index):
+    heatmap = make_gradcam_heatmap(
+        model, image, model_name, class_index
+    )
+
+    if heatmap is None:
+        st.info(
+            "Live Grad-CAM could not be generated for this model's "
+            "architecture. You can still view the prediction and "
+            "the precomputed Grad-CAM images in the project repository."
+        )
+        return
+
+    heatmap_image = Image.fromarray(
+        np.uint8(255 * heatmap)
+    ).resize(image.size)
+
+    base = np.asarray(image.convert("RGB"), dtype=np.float32)
+    heat = np.asarray(heatmap_image, dtype=np.float32) / 255.0
+
+    # Create a simple red-yellow heat overlay.
+    colored = np.zeros_like(base)
+    colored[..., 0] = np.clip(255 * heat, 0, 255)
+    colored[..., 1] = np.clip(180 * heat, 0, 255)
+
+    overlay = np.clip(0.55 * base + 0.45 * colored, 0, 255)
+    st.image(
+        overlay.astype(np.uint8),
+        caption=f"Grad-CAM overlay — {model_name}",
+        use_container_width=True,
+    )
+
+
+# --------------------------------------------------
+# HEADER
+# --------------------------------------------------
 st.title("🧠 Brain Tumor MRI Analysis")
-st.caption("AI-assisted MRI classification • Research & educational prototype")
-st.markdown("---")
-st.write(
-    "Upload an MRI image to see the model's predicted class "
-    "and its output probabilities."
+st.caption(
+    "Multi-model MRI classification • Research and educational prototype"
 )
+
 st.warning(
-    "Educational prototype only. This model is not validated for "
-    "clinical use and must not be used to diagnose or guide treatment."
+    "Educational use only. This tool is not clinically validated and "
+    "must not be used to diagnose, exclude disease, or guide treatment. "
+    "Predictions can be wrong, including on images from unseen sources."
 )
 
-@st.cache_resource
-def load_model(model_path):
-    return tf.keras.models.load_model(model_path, compile=False)
+st.divider()
 
 
-st.markdown("### 🔬 Analyze an MRI scan")
-st.write("Select a model, then upload an MRI image to view its prediction.")
+# --------------------------------------------------
+# SIDEBAR
+# --------------------------------------------------
+with st.sidebar:
+    st.header("⚙️ Analysis settings")
+    selected_cam_model = st.selectbox(
+        "Grad-CAM model",
+        list(MODEL_FILES.keys()),
+        index=2,
+    )
+    st.caption(
+        "The app downloads model weights from the public Hugging Face "
+        "repository on first use. Downloads are cached by Hugging Face."
+    )
 
-selected_model = st.selectbox(
-    "Choose a trained model",
-    list(MODEL_FILES.keys())
-)
 
-
+# --------------------------------------------------
+# IMAGE UPLOAD
+# --------------------------------------------------
+st.subheader("🔬 Upload an MRI image")
 uploaded_file = st.file_uploader(
-    "Upload an MRI image",
-    type=["png", "jpg", "jpeg"]
+    "Choose a JPG, JPEG, or PNG image",
+    type=["jpg", "jpeg", "png"],
 )
-
 
 if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file).convert("RGB")
 
-        left_col, right_col = st.columns([1, 1])
+        preview_col, info_col = st.columns([1, 1])
 
-        with left_col:
+        with preview_col:
             st.image(
                 image,
                 caption="Uploaded MRI image",
-                use_container_width=True
+                use_container_width=True,
             )
 
-        with right_col:
-            if st.button("Classify MRI", type="primary"):
-                model_path = f"{PROJECT_PATH}/{MODEL_FILES[selected_model]}"
+        with info_col:
+            st.markdown("### Ready to analyze")
+            st.write("Image dimensions: " + str(image.size))
+            st.write("Models: 3 individual classifiers + soft voting")
+            run_analysis = st.button(
+                "🚀 Analyze MRI",
+                type="primary",
+                use_container_width=True,
+            )
 
-                with st.spinner("Loading model and classifying image..."):
-                    model = load_model(model_path)
+        if run_analysis:
+            all_probabilities = {}
+            loaded_models = {}
 
-                    image_resized = image.resize((224, 224))
-                    image_array = np.asarray(
-                        image_resized, dtype=np.float32
+            progress = st.progress(0.0)
+            status = st.empty()
+
+            for index, model_name in enumerate(MODEL_FILES):
+                status.write(f"Loading and running {model_name}...")
+                model = load_model(model_name)
+                loaded_models[model_name] = model
+
+                all_probabilities[model_name] = predict_probabilities(
+                    model, image, model_name
+                )
+                progress.progress((index + 1) / len(MODEL_FILES))
+
+            # Soft voting: mean of the three probability vectors.
+            ensemble_probabilities = np.mean(
+                np.stack(list(all_probabilities.values())),
+                axis=0,
+            )
+            all_probabilities["Soft-voting ensemble"] = (
+                ensemble_probabilities
+            )
+
+            progress.empty()
+            status.success("Analysis completed.")
+
+            st.divider()
+            st.subheader("📊 Prediction summary")
+
+            summary_cols = st.columns(4)
+
+            for column, (model_name, probabilities) in zip(
+                summary_cols, all_probabilities.items()
+            ):
+                best_index = int(np.argmax(probabilities))
+                with column:
+                    st.metric(
+                        model_name,
+                        CLASS_NAMES[best_index].replace("_", " ").title(),
+                        f"{probabilities[best_index] * 100:.2f}% output",
                     )
-                    image_batch = np.expand_dims(image_array, axis=0)
 
-                    if selected_model == "Custom CNN":
-                        model_input = image_batch / 255.0
-                    elif selected_model == "ResNet50":
-                        model_input = (
-                            tf.keras.applications.resnet50.preprocess_input(
-                                image_batch.copy()
-                            )
-                        )
-                    else:
-                        model_input = image_batch
+            st.caption(
+                "Displayed percentages are model output probabilities, "
+                "not calibrated clinical confidence estimates."
+            )
 
-                    probabilities = model.predict(
-                        model_input, verbose=0
-                    )[0]
+            st.divider()
+            st.subheader("📈 Class probability comparison")
 
-                predicted_index = int(np.argmax(probabilities))
-                predicted_class = CLASS_NAMES[predicted_index]
-                confidence = float(probabilities[predicted_index]) * 100
+            chart_data = pd.DataFrame(
+                {
+                    model_name: probabilities * 100
+                    for model_name, probabilities
+                    in all_probabilities.items()
+                },
+                index=CLASS_NAMES,
+            )
+            chart_data.index.name = "Class"
 
-                st.subheader("Prediction")
-                st.write(f"**Predicted class:** {predicted_class}")
-                st.metric(
-                    "Highest class probability",
-                    f"{confidence:.2f}%"
-                )
+            st.bar_chart(chart_data, y_label="Output probability (%)")
 
-                st.caption(
-                    "These are model output probabilities, not calibrated "
-                    "clinical confidence estimates."
-                )
+            st.subheader("Detailed probabilities")
+            detail_rows = []
 
-                st.subheader("Output probabilities")
+            for model_name, probabilities in all_probabilities.items():
                 for class_name, probability in zip(
                     CLASS_NAMES, probabilities
                 ):
-                    st.write(
-                        f"**{class_name}** — {probability * 100:.2f}%"
-                    )
-                    st.progress(
-                        float(np.clip(probability, 0.0, 1.0))
-                    )
+                    detail_rows.append({
+                        "Model": model_name,
+                        "Class": class_name,
+                        "Output probability (%)": round(
+                            float(probability * 100), 2
+                        ),
+                    })
+
+            st.dataframe(
+                pd.DataFrame(detail_rows),
+                hide_index=True,
+                use_container_width=True,
+            )
+
+            st.divider()
+            st.subheader("🔥 Grad-CAM visualization")
+            st.write(
+                "Grad-CAM is an approximate visualization of regions "
+                "associated with a model's output. It is not an explanation "
+                "of clinical reasoning and does not establish that a "
+                "highlighted region contains a tumor."
+            )
+
+            selected_probabilities = all_probabilities[selected_cam_model]
+            selected_class_index = int(
+                np.argmax(selected_probabilities)
+            )
+
+            display_gradcam(
+                loaded_models[selected_cam_model],
+                image,
+                selected_cam_model,
+                selected_class_index,
+            )
+
+            st.divider()
+            st.subheader("ℹ️ Model performance on the test set")
+
+            performance = pd.DataFrame({
+                "Model": [
+                    "Custom CNN",
+                    "ResNet50",
+                    "EfficientNetB0",
+                    "Soft-voting ensemble",
+                ],
+                "Held-out test accuracy": [
+                    "70.81%",
+                    "91.56%",
+                    "92.94%",
+                    "92.25%",
+                ],
+            })
+
+            st.dataframe(
+                performance,
+                hide_index=True,
+                use_container_width=True,
+            )
+
+            st.caption(
+                "These are previously measured test-set accuracies, not "
+                "a guarantee of performance on the uploaded image."
+            )
 
     except Exception as error:
-        st.error(f"Could not process this image: {error}")
+        st.error(
+            "Analysis failed. Please check the uploaded image and "
+            "deployment logs."
+        )
+        st.exception(error)
+
+else:
+    st.info("Upload an MRI image to begin the analysis.")
 
 st.divider()
 st.caption(
-    "Research/educational use only. Performance on uploaded images "
-    "may differ from performance on the held-out dataset."
+    "Research and educational prototype • Not for clinical use • "
+    "Do not use these outputs to make medical decisions."
 )
+```
