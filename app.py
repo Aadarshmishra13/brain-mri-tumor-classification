@@ -1,4 +1,4 @@
-```python
+
 import os
 import tempfile
 
@@ -439,4 +439,4 @@ st.caption(
     "Research and educational prototype • Not for clinical use • "
     "Do not use these outputs to make medical decisions."
 )
-```
+
