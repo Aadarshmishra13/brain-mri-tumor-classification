@@ -198,9 +198,11 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
         return heatmap.numpy()
 
    
-except Exception as error:
-    st.error(f"Grad-CAM debug error ({model_name}): {error}")
-    return None
+
+    except Exception as error:
+        st.error(f"Grad-CAM debug error ({model_name}): {error}")
+        return None
+
 
 
 
