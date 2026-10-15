@@ -266,10 +266,12 @@ def display_gradcam(model, image, model_name, class_index):
     ).astype(np.uint8)
 
    
-  st.image(
-    overlay,
-    width=220,
-)
+ 
+    st.image(
+        overlay,
+        width=220,
+    )
+
 
 
     return heatmap
