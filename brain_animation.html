@@ -52,7 +52,7 @@ const loader = new GLTFLoader();
 
 // Public 3D brain model; the animation runs locally in the browser.
 loader.load(
-  "https://cdn.3dassets.dev/assets/38955/v1/model.glb",
+  "./brain.glb",
   (gltf) => {
     brain = gltf.scene;
 
