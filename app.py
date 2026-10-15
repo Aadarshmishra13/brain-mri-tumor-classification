@@ -112,17 +112,18 @@ def predict_probabilities(model, image, model_name):
     return probabilities
 
 
+
 # --------------------------------------------------
 # GRAD-CAM HELPERS
 # --------------------------------------------------
 
 def make_gradcam_heatmap(model, image, model_name, class_index):
-    """Generate Grad-CAM for a CNN or a transfer-learning model."""
+    """Generate Grad-CAM for the selected model."""
     try:
         image_batch = prepare_image(image, model_name)
         input_tensor = tf.convert_to_tensor(image_batch)
 
-        # Find the last convolution layer, including nested backbones.
+        # Find the last convolution layer.
         def find_conv(container):
             for layer in reversed(container.layers):
                 if isinstance(layer, tf.keras.layers.Conv2D):
@@ -139,11 +140,14 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
 
         container, conv_layer = found
 
-        # Standard CNN: obtain activations and predictions in one graph.
+        # Custom CNN
         if container is model:
+            # Call the model first to build its layers.
+            _ = model(input_tensor, training=False)
+
             grad_model = tf.keras.Model(
                 inputs=model.inputs,
-                outputs=[conv_layer.output, model.output],
+                outputs=[conv_layer.output, model.outputs[0]],
             )
 
             with tf.GradientTape() as tape:
@@ -152,10 +156,10 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
                 )
                 score = predictions[:, class_index]
 
+        # Transfer-learning models
         else:
-            # Transfer-learning model: run the backbone to obtain both
-            # convolutional activations and its final feature output.
             backbone = container
+
             backbone_cam = tf.keras.Model(
                 inputs=backbone.inputs,
                 outputs=[conv_layer.output, backbone.output],
@@ -176,8 +180,7 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
                     if passed_backbone:
                         x = layer(x, training=False)
 
-                predictions = x
-                score = predictions[:, class_index]
+                score = x[:, class_index]
 
         gradients = tape.gradient(score, activations)
         if gradients is None:
@@ -190,20 +193,15 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
         )
 
         heatmap = tf.maximum(heatmap, 0)
-        maximum = tf.reduce_max(heatmap)
-        heatmap = heatmap / (
-            maximum + tf.keras.backend.epsilon()
+        heatmap /= (
+            tf.reduce_max(heatmap) + tf.keras.backend.epsilon()
         )
 
         return heatmap.numpy()
 
-   
-
     except Exception as error:
         st.error(f"Grad-CAM debug error ({model_name}): {error}")
         return None
-
-
 
 
 def display_gradcam(model, image, model_name, class_index):
@@ -244,7 +242,6 @@ def display_gradcam(model, image, model_name, class_index):
     )
 
     return heatmap
-
 
 # --------------------------------------------------
 # HEADER
