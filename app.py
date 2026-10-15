@@ -1,18 +1,24 @@
 
 import os
 import tempfile
+import io
+from datetime import datetime
 
 import numpy as np
 import pandas as pd
 import streamlit as st
 import tensorflow as tf
-import matplotlib.pyplot as plt
-
 from PIL import Image
 from huggingface_hub import hf_hub_download
 
 import streamlit.components.v1 as components
 import plotly.graph_objects as go
+import matplotlib.pyplot as plt
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image as PDFImage, Table, TableStyle, PageBreak
 
 st.set_page_config(
     page_title="Brain Tumor MRI Analysis",
@@ -386,6 +392,121 @@ def display_gradcam(model, image, model_name, class_index):
 
 
 
+def create_analysis_pdf(image, all_probabilities, ensemble_probabilities, heatmaps):
+    """Build a downloadable PDF from results already computed in this run."""
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter, rightMargin=0.55 * inch,
+        leftMargin=0.55 * inch, topMargin=0.55 * inch, bottomMargin=0.55 * inch
+    )
+    styles = getSampleStyleSheet()
+    styles.add(ParagraphStyle(
+        name="TealTitle", parent=styles["Title"], textColor=colors.HexColor("#167C80"),
+        fontSize=20, leading=24, spaceAfter=8
+    ))
+    styles.add(ParagraphStyle(
+        name="SectionTeal", parent=styles["Heading2"], textColor=colors.HexColor("#167C80"),
+        fontSize=13, leading=16, spaceBefore=12, spaceAfter=6
+    ))
+    story = [
+        Paragraph("Brain Tumor MRI Analysis", styles["TealTitle"]),
+        Paragraph(f"Generated: {datetime.now().strftime('%d %B %Y, %H:%M')}", styles["Normal"]),
+        Spacer(1, 12),
+        Paragraph("Prediction Summary", styles["SectionTeal"]),
+    ]
+
+    # Include uploaded MRI thumbnail.
+    image_buffer = io.BytesIO()
+    image.convert("RGB").save(image_buffer, format="PNG")
+    image_buffer.seek(0)
+    story.append(PDFImage(image_buffer, width=2.25 * inch, height=2.0 * inch, kind="proportional"))
+    story.append(Spacer(1, 8))
+
+    ens_idx = int(np.argmax(ensemble_probabilities))
+    ens_class = CLASS_NAMES[ens_idx].replace("_", " ").title()
+    ens_prob = float(ensemble_probabilities[ens_idx]) * 100
+    story.append(Paragraph(
+        f"<b>Soft-voting ensemble:</b> {ens_class} — {ens_prob:.2f}% output probability",
+        styles["Normal"]
+    ))
+    story.append(Paragraph(
+        "Output probabilities are not calibrated clinical confidence estimates.", styles["Normal"]
+    ))
+
+    story.append(Paragraph("Model Comparison", styles["SectionTeal"]))
+    rows = [["Model", "Predicted class", "Output probability", "Test-set accuracy"]]
+    accuracies = {"Custom CNN": "70.81%", "ResNet50": "91.56%", "EfficientNetB0": "92.94%"}
+    for model_name, probs in all_probabilities.items():
+        idx = int(np.argmax(probs))
+        rows.append([model_name, CLASS_NAMES[idx].replace("_", " ").title(), f"{float(probs[idx])*100:.2f}%", accuracies.get(model_name, "N/A")])
+    rows.append(["Soft-voting ensemble", ens_class, f"{ens_prob:.2f}%", "92.25%"] )
+    table = Table(rows, repeatRows=1, colWidths=[1.55*inch, 1.45*inch, 1.45*inch, 1.35*inch])
+    table.setStyle(TableStyle([
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#123C3D")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("BACKGROUND", (0, 1), (-1, -1), colors.HexColor("#F2F8F7")),
+        ("TEXTCOLOR", (0, 1), (-1, -1), colors.HexColor("#17212B")),
+        ("GRID", (0, 0), (-1, -1), 0.5, colors.HexColor("#B7D6D2")),
+        ("FONTSIZE", (0, 0), (-1, -1), 8),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("LEFTPADDING", (0, 0), (-1, -1), 6),
+        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+        ("TOPPADDING", (0, 0), (-1, -1), 6),
+        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
+    ]))
+    story.append(table)
+
+    # Static chart image for the PDF.
+    chart_buffer = io.BytesIO()
+    fig, ax = plt.subplots(figsize=(7.2, 3.6))
+    x = np.arange(len(CLASS_NAMES))
+    names = list(all_probabilities.keys())
+    palette = ["#367C87", "#45B8A5", "#8ADBC8"]
+    width = 0.24
+    for i, name in enumerate(names):
+        ax.bar(x + (i - (len(names)-1)/2) * width, all_probabilities[name] * 100, width, label=name, color=palette[i % len(palette)])
+    ax.set_xticks(x, [c.replace("_", " ").title() for c in CLASS_NAMES])
+    ax.set_ylabel("Output probability (%)")
+    ax.set_ylim(0, 100)
+    ax.grid(axis="y", alpha=0.2)
+    ax.legend(frameon=False, fontsize=8)
+    fig.tight_layout()
+    fig.savefig(chart_buffer, format="png", dpi=160, bbox_inches="tight")
+    plt.close(fig)
+    chart_buffer.seek(0)
+    story.append(Spacer(1, 12))
+    story.append(PDFImage(chart_buffer, width=6.8*inch, height=3.4*inch, kind="proportional"))
+
+    story.append(PageBreak())
+    story.append(Paragraph("Grad-CAM Visualizations", styles["SectionTeal"]))
+    story.append(Paragraph(
+        "These heatmaps visualize regions that influenced each model's output; they do not establish a diagnosis or prove tumor location.",
+        styles["Normal"]
+    ))
+    for model_name in ["ResNet50", "EfficientNetB0", "Custom CNN"]:
+        heatmap = heatmaps.get(model_name)
+        if heatmap is None:
+            continue
+        heatmap_image = Image.fromarray(np.uint8(255 * np.clip(heatmap, 0, 1))).resize(image.size)
+        base = np.asarray(image.convert("RGB"), dtype=np.float32)
+        heat = np.asarray(heatmap_image, dtype=np.float32) / 255.0
+        colored = np.zeros_like(base)
+        colored[..., 0] = 255 * heat
+        colored[..., 1] = 180 * heat
+        overlay = np.clip(0.55 * base + 0.45 * colored, 0, 255).astype(np.uint8)
+        overlay_buffer = io.BytesIO()
+        Image.fromarray(overlay).save(overlay_buffer, format="PNG")
+        overlay_buffer.seek(0)
+        story.append(Paragraph(model_name, styles["Heading3"]))
+        story.append(PDFImage(overlay_buffer, width=3.0*inch, height=2.5*inch, kind="proportional"))
+        story.append(Spacer(1, 8))
+
+    doc.build(story)
+    buffer.seek(0)
+    return buffer.getvalue()
+
+
 
 
 # --------------------------------------------------
@@ -607,11 +728,11 @@ if uploaded_file is not None:
                 "EfficientNetB0": "92.94%",
             }
 
-            # Professional, muted colours for the dark theme
+            # Professional teal palette for the dark theme
             model_colors = {
-                "Custom CNN": "#7899B8",
-                "ResNet50": "#55B8A8",
-                "EfficientNetB0": "#A69AD8",
+                "Custom CNN": "#367C87",
+                "ResNet50": "#45B8A5",
+                "EfficientNetB0": "#8ADBC8",
             }
 
             fig = go.Figure()
@@ -688,6 +809,7 @@ if uploaded_file is not None:
             ]
 
             cam_cols = st.columns(3)
+            heatmaps_for_report = {}
 
             for col, model_name in zip(cam_cols, cam_models):
                 probabilities = all_probabilities[model_name]
@@ -701,7 +823,7 @@ if uploaded_file is not None:
                 with col:
                     st.markdown(f"**{model_name}**")
 
-                    display_gradcam(
+                    heatmaps_for_report[model_name] = display_gradcam(
                         loaded_models[model_name],
                         image,
                         model_name,
@@ -740,6 +862,22 @@ if uploaded_file is not None:
                 "for individual MRI predictions."
             )
 
+            st.divider()
+            st.subheader("📄 Download Analysis Report")
+            try:
+                pdf_bytes = create_analysis_pdf(
+                    image, all_probabilities, ensemble_probabilities, heatmaps_for_report
+                )
+                # Keep the generated report across Streamlit reruns so the
+                # download button remains available after analysis completes.
+                st.session_state["analysis_pdf_bytes"] = pdf_bytes
+                st.session_state["analysis_pdf_filename"] = (
+                    f"brain_mri_analysis_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf"
+                )
+            except Exception as report_error:
+                st.error("Could not generate the PDF report. Please check deployment logs.")
+                st.exception(report_error)
+
 
 
     except Exception as error:
@@ -751,6 +889,23 @@ if uploaded_file is not None:
 
 else:
     st.info("Upload an MRI image to begin the analysis.")
+
+# Render the download button outside the Analyze button's one-run condition.
+# This keeps it visible on subsequent Streamlit reruns.
+if st.session_state.get("analysis_pdf_bytes") is not None:
+    st.divider()
+    st.subheader("📄 Download Analysis Report")
+    st.download_button(
+        label="📄 Download PDF Report",
+        data=st.session_state["analysis_pdf_bytes"],
+        file_name=st.session_state.get(
+            "analysis_pdf_filename", "brain_mri_analysis.pdf"
+        ),
+        mime="application/pdf",
+        type="primary",
+        use_container_width=True,
+        key="download_analysis_pdf_persistent",
+    )
 
 st.divider()
 st.caption(
