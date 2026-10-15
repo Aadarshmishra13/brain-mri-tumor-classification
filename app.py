@@ -12,26 +12,42 @@ from PIL import Image
 from huggingface_hub import hf_hub_download
 
 
+
 st.markdown("""
 <style>
+/* Compact, modern MRI uploader */
 [data-testid="stFileUploader"] {
-    background: rgba(128, 128, 128, 0.05);
-    border: 1px dashed rgba(128, 128, 128, 0.45);
-    border-radius: 12px;
-    padding: 8px 12px;
+    max-width: 560px;
+    margin-top: 0.25rem;
 }
 
-[data-testid="stFileUploader"] section {
-    border: none;
-    background: transparent;
+[data-testid="stFileUploader"] > section {
+    padding: 0.35rem 0.75rem;
+    border: 1px dashed #64748b;
+    border-radius: 10px;
+    background: rgba(100, 116, 139, 0.06);
+}
+
+[data-testid="stFileUploader"] > section > div {
+    gap: 0.35rem;
 }
 
 [data-testid="stFileUploader"] button {
-    border-radius: 8px;
-    font-weight: 500;
+    border-radius: 7px;
+    padding: 0.25rem 0.7rem;
+    font-size: 0.85rem;
+}
+
+[data-testid="stFileUploader"] small {
+    font-size: 0.75rem;
+}
+
+[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] {
+    gap: 0.2rem;
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 # --------------------------------------------------
 # PAGE CONFIGURATION
