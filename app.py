@@ -478,67 +478,55 @@ if uploaded_file is not None:
                 np.stack(list(all_probabilities.values())),
                 axis=0,
             )
-           
-progress.empty()
-status.success("Analysis completed.")
 
-st.divider()
-st.subheader("📊 Prediction Summary")
-st.caption("Predicted class and model confidence")
+            progress.empty()
+            status.success("Analysis completed.")
 
-summary_cols = st.columns(4)
+            st.divider()
+            st.subheader("📊 Prediction Summary")
+            st.caption("Predicted class and model confidence")
 
-for column, (model_name, probabilities) in zip(
-    summary_cols, all_probabilities.items()
-):
-    best_index = int(np.argmax(probabilities))
-    predicted_class = (
-        CLASS_NAMES[best_index].replace("_", " ").title()
-    )
-    confidence = probabilities[best_index] * 100
+            summary_cols = st.columns(4)
 
-    with column:
-        st.markdown(
-            """
-            <div style="
-                background: #0A0A0A;
-                border: 1px solid #2A2A2A;
-                border-radius: 12px;
-                padding: 16px 12px;
-                min-height: 125px;
-            ">
-            """,
-            unsafe_allow_html=True,
-        )
+            for column, (model_name, probabilities) in zip(
+                summary_cols, all_probabilities.items()
+            ):
+                best_index = int(np.argmax(probabilities))
+                predicted_class = (
+                    CLASS_NAMES[best_index]
+                    .replace("_", " ")
+                    .title()
+                )
+                confidence = probabilities[best_index] * 100
 
-        st.caption(model_name)
-        st.markdown(
-            f"""
-            <div style="
-                color: #F5F7FA;
-                font-size: 19px;
-                font-weight: 650;
-                margin: 8px 0;
-            ">{predicted_class}</div>
-            <div style="
-                color: #55D6BE;
-                font-size: 14px;
-                font-weight: 600;
-            ">{confidence:.2f}% confidence</div>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        st.markdown(
-            """
-            <div style="
-                height: 1px;
-                background: #222222;
-                margin-top: 12px;
-            "></div>
-            """,
-            unsafe_allow_html=True,
-        )
+                with column:
+                    st.markdown(
+                        f"""
+                        <div style="
+                            background: #0A0A0A;
+                            border: 1px solid #2A2A2A;
+                            border-radius: 12px;
+                            padding: 16px 12px;
+                            min-height: 125px;
+                        ">
+                            <div style="color:#A7B0BE;font-size:13px;">
+                                {model_name}
+                            </div>
+                            <div style="
+                                color:#F5F7FA;
+                                font-size:19px;
+                                font-weight:650;
+                                margin:8px 0;
+                            ">{predicted_class}</div>
+                            <div style="
+                                color:#55D6BE;
+                                font-size:14px;
+                                font-weight:600;
+                            ">{confidence:.2f}% output probability</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True,
+                    )
 
             st.caption(
                 "Displayed percentages are model output probabilities, "
@@ -558,15 +546,12 @@ for column, (model_name, probabilities) in zip(
             )
             chart_data.index.name = "Class"
 
-           
             st.bar_chart(
                 chart_data,
                 y_label="Probability (%)",
                 height=280,
             )
 
-
-            
             st.divider()
             st.subheader("🔥 Grad-CAM: Where Each Model Is Looking")
 
@@ -576,17 +561,17 @@ for column, (model_name, probabilities) in zip(
                 "Custom CNN",
             ]
 
-
             cam_cols = st.columns(3)
 
             for col, model_name in zip(cam_cols, cam_models):
                 probabilities = all_probabilities[model_name]
                 predicted_class_index = int(np.argmax(probabilities))
-                predicted_class = CLASS_NAMES[
-                    predicted_class_index
-                ].replace("_", " ").title()
+                predicted_class = (
+                    CLASS_NAMES[predicted_class_index]
+                    .replace("_", " ")
+                    .title()
+                )
 
-               
                 with col:
                     st.markdown(f"**{model_name}**")
 
@@ -599,9 +584,7 @@ for column, (model_name, probabilities) in zip(
 
                     st.caption(f"Pred: {predicted_class.lower()}")
 
-
             st.divider()
-          
             st.subheader("📊 Test-set accuracy")
 
             performance = pd.DataFrame({
@@ -630,6 +613,7 @@ for column, (model_name, probabilities) in zip(
                 "Previously measured test-set accuracy; not a guarantee "
                 "for individual MRI predictions."
             )
+
 
 
     except Exception as error:
