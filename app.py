@@ -863,7 +863,7 @@ if uploaded_file is not None:
             )
 
             st.divider()
-            st.subheader("📄 Download Analysis Report")
+          
             try:
                 pdf_bytes = create_analysis_pdf(
                     image, all_probabilities, ensemble_probabilities, heatmaps_for_report
