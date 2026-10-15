@@ -265,11 +265,12 @@ def display_gradcam(model, image, model_name, class_index):
         0.55 * base + 0.45 * colored, 0, 255
     ).astype(np.uint8)
 
+   
     st.image(
         overlay,
-        caption=f"Grad-CAM overlay — {model_name}",
         use_container_width=True,
     )
+
 
     return heatmap
 
@@ -425,28 +426,16 @@ if uploaded_file is not None:
                 use_container_width=True,
             )
 
+            
             st.divider()
-            st.subheader("🔥 Grad-CAM visualization")
-            st.write(
-                "Grad-CAM is an approximate visualization of regions "
-                "associated with a model's output. It is not an explanation "
-                "of clinical reasoning and does not establish that a "
-                "highlighted region contains a tumor."
-            )
-
-           
             st.subheader("🔥 Grad-CAM: Where Each Model Is Looking")
-            st.write(
-                "These heatmaps highlight image regions associated with "
-                "each model's prediction. They are approximate visualizations, "
-                "not clinical explanations."
-            )
 
             cam_models = [
                 "ResNet50",
                 "EfficientNetB0",
                 "Custom CNN",
             ]
+
 
             cam_cols = st.columns(3)
 
