@@ -11,7 +11,13 @@ import matplotlib.pyplot as plt
 from PIL import Image
 from huggingface_hub import hf_hub_download
 
+import streamlit.components.v1 as components
 
+st.set_page_config(
+    page_title="Brain Tumor MRI Analysis",
+    page_icon="🧠",
+    layout="wide",
+)
 
 
 st.markdown("""
@@ -121,11 +127,6 @@ hr {
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
-st.set_page_config(
-    page_title="Brain Tumor MRI Analysis",
-    page_icon="🧠",
-    layout="wide",
-)
 
 st.markdown("""
 <style>
@@ -403,6 +404,27 @@ st.markdown(
 st.divider()
 
 
+
+
+
+
+
+# --------------------------------------------------
+# 3D ROTATING BRAIN
+# --------------------------------------------------
+html_path = os.path.join(os.path.dirname(__file__), "brain_animation.html")
+
+if os.path.exists(html_path):
+    with open(html_path, "r", encoding="utf-8") as f:
+        brain_html = f.read()
+
+    components.html(
+        brain_html,
+        height=440,
+        scrolling=False,
+    )
+else:
+    st.warning("3D brain animation file not found.")
 
 
 
