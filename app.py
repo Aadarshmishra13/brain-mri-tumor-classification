@@ -609,88 +609,88 @@ if uploaded_file is not None:
             st.subheader("📈 Class probability comparison")
 
           
-chart_data = pd.DataFrame(
-    {
-        model_name: probabilities * 100
-        for model_name, probabilities in all_probabilities.items()
-    },
-    index=CLASS_NAMES,
-)
+            chart_data = pd.DataFrame(
+                {
+                    model_name: probabilities * 100
+                    for model_name, probabilities in all_probabilities.items()
+                },
+                index=CLASS_NAMES,
+            )
 
-model_accuracies = {
-    "Custom CNN": "70.81%",
-    "ResNet50": "91.56%",
-    "EfficientNetB0": "92.94%",
-}
+            model_accuracies = {
+                "Custom CNN": "70.81%",
+                "ResNet50": "91.56%",
+                "EfficientNetB0": "92.94%",
+            }
 
-# Professional, muted colours for the dark theme
-model_colors = {
-    "Custom CNN": "#7899B8",
-    "ResNet50": "#55B8A8",
-    "EfficientNetB0": "#A69AD8",
-}
+            # Professional, muted colours for the dark theme
+            model_colors = {
+                "Custom CNN": "#7899B8",
+                "ResNet50": "#55B8A8",
+                "EfficientNetB0": "#A69AD8",
+            }
 
-fig = go.Figure()
+            fig = go.Figure()
 
-for model_name in chart_data.columns:
-    probabilities = all_probabilities[model_name] * 100
-    predicted_index = int(np.argmax(all_probabilities[model_name]))
-    predicted_class = CLASS_NAMES[predicted_index].replace("_", " ").title()
+            for model_name in chart_data.columns:
+                probabilities = all_probabilities[model_name] * 100
+                predicted_index = int(np.argmax(all_probabilities[model_name]))
+                predicted_class = CLASS_NAMES[predicted_index].replace("_", " ").title()
 
-    fig.add_trace(
-        go.Bar(
-            name=model_name,
-            x=CLASS_NAMES,
-            y=probabilities,
-            marker_color=model_colors[model_name],
-            customdata=[
-                [predicted_class, model_accuracies[model_name]]
-                for _ in CLASS_NAMES
-            ],
-            hovertemplate=(
-                "<b>%{fullData.name}</b><br>"
-                "Class: %{x}<br>"
-                "Output probability: %{y:.2f}%<br>"
-                "Model's predicted class: %{customdata[0]}<br>"
-                "Test-set accuracy: %{customdata[1]}"
-                "<extra></extra>"
-            ),
-        )
-    )
+                fig.add_trace(
+                    go.Bar(
+                        name=model_name,
+                        x=CLASS_NAMES,
+                        y=probabilities,
+                        marker_color=model_colors[model_name],
+                        customdata=[
+                            [predicted_class, model_accuracies[model_name]]
+                            for _ in CLASS_NAMES
+                        ],
+                        hovertemplate=(
+                            "<b>%{fullData.name}</b><br>"
+                            "Class: %{x}<br>"
+                            "Output probability: %{y:.2f}%<br>"
+                            "Model's predicted class: %{customdata[0]}<br>"
+                            "Test-set accuracy: %{customdata[1]}"
+                            "<extra></extra>"
+                        ),
+                    )
+                )
 
-fig.update_layout(
-    barmode="group",
-    height=420,
-    margin=dict(l=20, r=20, t=25, b=20),
-    paper_bgcolor="#000000",
-    plot_bgcolor="#0F1117",
-    font=dict(color="#D7DEE8"),
-    xaxis=dict(
-        title="Class",
-        showgrid=False,
-    ),
-    yaxis=dict(
-        title="Output probability (%)",
-        range=[0, 100],
-        dtick=20,
-        gridcolor="#292E38",
-        zerolinecolor="#292E38",
-    ),
-    legend=dict(
-        orientation="h",
-        yanchor="bottom",
-        y=1.02,
-        xanchor="left",
-        x=0,
-    ),
-    hoverlabel=dict(
-        bgcolor="#17212B",
-        bordercolor="#55B8A8",
-        font=dict(color="#FFFFFF", size=13),
-    ),
-)
+            fig.update_layout(
+                barmode="group",
+                height=420,
+                margin=dict(l=20, r=20, t=25, b=20),
+                paper_bgcolor="#000000",
+                plot_bgcolor="#0F1117",
+                font=dict(color="#D7DEE8"),
+                xaxis=dict(
+                    title="Class",
+                    showgrid=False,
+                ),
+                yaxis=dict(
+                    title="Output probability (%)",
+                    range=[0, 100],
+                    dtick=20,
+                    gridcolor="#292E38",
+                    zerolinecolor="#292E38",
+                ),
+                legend=dict(
+                    orientation="h",
+                    yanchor="bottom",
+                    y=1.02,
+                    xanchor="left",
+                    x=0,
+                ),
+                hoverlabel=dict(
+                    bgcolor="#17212B",
+                    bordercolor="#55B8A8",
+                    font=dict(color="#FFFFFF", size=13),
+                ),
+            )
 
-st.plotly_chart(fig, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
 
 
 
