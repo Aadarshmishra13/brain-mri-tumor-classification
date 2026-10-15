@@ -12,6 +12,27 @@ from PIL import Image
 from huggingface_hub import hf_hub_download
 
 
+st.markdown("""
+<style>
+[data-testid="stFileUploader"] {
+    background: rgba(128, 128, 128, 0.05);
+    border: 1px dashed rgba(128, 128, 128, 0.45);
+    border-radius: 12px;
+    padding: 8px 12px;
+}
+
+[data-testid="stFileUploader"] section {
+    border: none;
+    background: transparent;
+}
+
+[data-testid="stFileUploader"] button {
+    border-radius: 8px;
+    font-weight: 500;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --------------------------------------------------
 # PAGE CONFIGURATION
 # --------------------------------------------------
