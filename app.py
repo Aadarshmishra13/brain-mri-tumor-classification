@@ -323,14 +323,16 @@ if uploaded_file is not None:
     try:
         image = Image.open(uploaded_file).convert("RGB")
 
+       
         preview_col, info_col = st.columns([1, 1])
 
         with preview_col:
             st.image(
                 image,
                 caption="Uploaded MRI image",
-                use_container_width=True,
+                width=300,
             )
+
 
         with info_col:
             st.markdown("### Ready to analyze")
