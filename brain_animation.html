@@ -65,7 +65,8 @@ loader.load(
   (gltf) => {
     brain = gltf.scene;
 
-   brain.traverse((obj) => {
+  
+brain.traverse((obj) => {
   if (obj.isMesh) {
     obj.material = new THREE.MeshStandardMaterial({
       color: 0x55bfc5,
@@ -77,9 +78,29 @@ loader.load(
     });
   }
 });
-brain.scale.setScalar(1.0);
-    brain.rotation.y = Math.PI;
-    brainGroup.add(brain);
+
+// Measure the model and center it
+brain.updateWorldMatrix(true, true);
+const box = new THREE.Box3().setFromObject(brain);
+const size = box.getSize(new THREE.Vector3());
+const center = box.getCenter(new THREE.Vector3());
+
+// Normalize the model's size
+const maxDim = Math.max(size.x, size.y, size.z);
+if (maxDim > 0) {
+  brain.scale.multiplyScalar(3 / maxDim);
+}
+
+// Center the model after scaling
+brain.position.set(0, 0, 0);
+brain.updateWorldMatrix(true, true);
+const centeredBox = new THREE.Box3().setFromObject(brain);
+const centered = centeredBox.getCenter(new THREE.Vector3());
+brain.position.sub(centered);
+
+brain.rotation.y = Math.PI;
+brainGroup.add(brain);
+
     loading.style.display = "none";
   },
   undefined,
