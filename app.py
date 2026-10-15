@@ -512,7 +512,50 @@ if uploaded_file is not None:
 
             st.divider()
             st.subheader("📊 Prediction Summary")
-            st.caption("Predicted class and model confidence")
+            
+st.caption("Predicted class and model output probability")
+
+# Soft-voting ensemble prediction
+ensemble_index = int(np.argmax(ensemble_probabilities))
+ensemble_class = (
+    CLASS_NAMES[ensemble_index]
+    .replace("_", " ")
+    .title()
+)
+ensemble_probability = ensemble_probabilities[ensemble_index] * 100
+
+st.markdown(
+    f"""
+    <div style="
+        background: linear-gradient(135deg, #082b2b, #0A1115);
+        border: 1px solid #32CFC3;
+        border-radius: 14px;
+        padding: 20px 22px;
+        margin: 12px 0 20px 0;
+    ">
+        <div style="
+            color: #55D6BE;
+            font-size: 13px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        ">🧠 SOFT-VOTING ENSEMBLE PREDICTION</div>
+        <div style="
+            color: #F5F7FA;
+            font-size: 28px;
+            font-weight: 750;
+            margin: 10px 0;
+        ">{ensemble_class}</div>
+        <div style="color: #55D6BE; font-size: 17px; font-weight: 650;">
+            {ensemble_probability:.2f}% output probability
+        </div>
+        <div style="color: #A7B0BE; font-size: 12px; margin-top: 8px;">
+            Mean of the probability outputs from all three models
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
+
 
             summary_cols = st.columns(4)
 
