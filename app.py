@@ -623,12 +623,14 @@ if uploaded_file is not None:
                 "EfficientNetB0": "92.94%",
             }
 
-            # Professional, muted colours for the dark theme
+           
+            # Professional teal palette for the dark theme
             model_colors = {
-                "Custom CNN": "#7899B8",
-                "ResNet50": "#55B8A8",
-                "EfficientNetB0": "#A69AD8",
+                "Custom CNN": "#367C87",
+                "ResNet50": "#45B8A5",
+                "EfficientNetB0": "#8ADBC8",
             }
+
 
             fig = go.Figure()
 
