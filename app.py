@@ -446,9 +446,9 @@ if uploaded_file is not None:
                     predicted_class_index
                 ].replace("_", " ").title()
 
+               
                 with col:
                     st.markdown(f"**{model_name}**")
-                    st.caption(f"Prediction: {predicted_class}")
 
                     display_gradcam(
                         loaded_models[model_name],
@@ -456,6 +456,8 @@ if uploaded_file is not None:
                         model_name,
                         predicted_class_index,
                     )
+
+                    st.caption(f"Pred: {predicted_class.lower()}")
 
 
             st.divider()
