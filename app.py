@@ -277,6 +277,7 @@ def display_gradcam(model, image, model_name, class_index):
     return heatmap
 
 
+
 # --------------------------------------------------
 # HEADER
 # --------------------------------------------------
@@ -284,14 +285,13 @@ st.title("🧠 Brain Tumor MRI Analysis")
 st.caption(
     "Multi-model MRI classification • Research and educational prototype"
 )
-
-st.warning(
-    "Educational use only. This tool is not clinically validated and "
-    "must not be used to diagnose, exclude disease, or guide treatment. "
-    "Predictions can be wrong, including on images from unseen sources."
+st.write(
+    "Ensemble of Base CNN + ResNet50 + EfficientNetB0, "
+    "with Grad-CAM explainability"
 )
 
 st.divider()
+
 
 
 # --------------------------------------------------
