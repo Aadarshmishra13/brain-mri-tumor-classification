@@ -358,6 +358,9 @@ Related files include:
 The repository is organized to separate application code, experiments, documentation, and evaluation outputs.
 
 ```text
+## 📁 Repository Structure
+
+```text
 brain-mri-tumor-classification/
 │
 ├── notebooks/
@@ -393,6 +396,10 @@ brain-mri-tumor-classification/
 │   └── README.md
 │
 ├── app.py
+├── brain_animation.html
+├── brain.glb
+├── best_cnn.keras
+├── fine_tuned_resnet50.keras
 ├── fine_tuned_efficientnetb0.keras
 ├── requirements.txt
 ├── .gitattributes
