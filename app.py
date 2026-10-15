@@ -113,6 +113,7 @@ def predict_probabilities(model, image, model_name):
 
 
 
+
 # --------------------------------------------------
 # GRAD-CAM HELPERS
 # --------------------------------------------------
@@ -136,54 +137,81 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
 
         found = find_conv(model)
         if found is None:
+            st.error(f"No convolutional layer found for {model_name}.")
             return None
 
         container, conv_layer = found
 
-        # Custom CNN
+        # --------------------------------------------------
+        # Custom CNN: sequential gradient calculation
+        # --------------------------------------------------
         if container is model:
-            # Call the model first to build its layers.
-            _ = model(input_tensor, training=False)
-
-            grad_model = tf.keras.Model(
-                inputs=model.inputs,
-                outputs=[conv_layer.output, model.outputs[0]],
-            )
+            x = input_tensor
+            activations = None
 
             with tf.GradientTape() as tape:
-                activations, predictions = grad_model(
-                    input_tensor, training=False
-                )
+                for layer in model.layers:
+                    x = layer(x, training=False)
+
+                    if layer.name == conv_layer.name:
+                        activations = x
+
+                predictions = x
                 score = predictions[:, class_index]
 
-        # Transfer-learning models
-        else:
-            backbone = container
+            if activations is None:
+                st.error("Could not find the Custom CNN convolution output.")
+                return None
 
-            backbone_cam = tf.keras.Model(
-                inputs=backbone.inputs,
-                outputs=[conv_layer.output, backbone.output],
+            gradients = tape.gradient(score, activations)
+
+            if gradients is None:
+                st.error(f"No gradients available for {model_name}.")
+                return None
+
+            weights = tf.reduce_mean(gradients, axis=(1, 2))
+            heatmap = tf.reduce_sum(
+                activations[0] * weights[0][tf.newaxis, tf.newaxis, :],
+                axis=-1,
             )
 
-            with tf.GradientTape() as tape:
-                activations, features = backbone_cam(
-                    input_tensor, training=False
-                )
+            heatmap = tf.maximum(heatmap, 0)
+            heatmap /= (
+                tf.reduce_max(heatmap) + tf.keras.backend.epsilon()
+            )
 
-                x = features
-                passed_backbone = False
+            return heatmap.numpy()
 
-                for layer in model.layers:
-                    if layer is backbone:
-                        passed_backbone = True
-                        continue
-                    if passed_backbone:
-                        x = layer(x, training=False)
+        # --------------------------------------------------
+        # Transfer-learning models: ResNet50 / EfficientNetB0
+        # --------------------------------------------------
+        backbone = container
 
-                score = x[:, class_index]
+        backbone_cam = tf.keras.Model(
+            inputs=backbone.inputs,
+            outputs=[conv_layer.output, backbone.output],
+        )
 
-    
+        with tf.GradientTape() as tape:
+            activations, features = backbone_cam(
+                input_tensor, training=False
+            )
+
+            x = features
+            passed_backbone = False
+
+            for layer in model.layers:
+                if layer is backbone:
+                    passed_backbone = True
+                    continue
+
+                if passed_backbone:
+                    x = layer(x, training=False)
+
+            score = x[:, class_index]
+
         gradients = tape.gradient(score, activations)
+
         if gradients is None:
             st.error(f"No gradients available for {model_name}.")
             return None
@@ -244,6 +272,7 @@ def display_gradcam(model, image, model_name, class_index):
     )
 
     return heatmap
+
 
 # --------------------------------------------------
 # HEADER
