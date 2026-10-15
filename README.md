@@ -357,10 +357,9 @@ Related files include:
 
 The repository is organized to separate application code, experiments, documentation, and evaluation outputs.
 
-```text
 ## 📁 Repository Structure
 
-
+```text
 brain-mri-tumor-classification/
 │
 ├── notebooks/
