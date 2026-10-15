@@ -1,0 +1,100 @@
+
+<div id="brain-scene" style="width:100%;height:420px;background:#000;border-radius:16px;overflow:hidden;position:relative;">
+  <div id="brain-loading" style="position:absolute;inset:0;display:grid;place-items:center;color:#55D6BE;font:14px sans-serif;">
+    Initializing 3D brain...
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js";
+
+const root = document.getElementById("brain-scene");
+const loading = document.getElementById("brain-loading");
+
+const scene = new THREE.Scene();
+scene.background = new THREE.Color("#000000");
+
+const camera = new THREE.PerspectiveCamera(35, 1, 0.1, 100);
+camera.position.set(0, 0, 5);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(root.clientWidth, root.clientHeight);
+renderer.setClearColor("#000000", 1);
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+root.appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0x8fffff, 2.2));
+
+const cyanLight = new THREE.PointLight(0x00eaff, 45);
+cyanLight.position.set(2, 2, 3);
+scene.add(cyanLight);
+
+const tealLight = new THREE.PointLight(0x00a9a9, 25);
+tealLight.position.set(-2, -1, 2);
+scene.add(tealLight);
+
+const brainGroup = new THREE.Group();
+scene.add(brainGroup);
+
+let brain = null;
+
+const loader = new GLTFLoader();
+
+// Public 3D brain model; the animation runs locally in the browser.
+loader.load(
+  "https://threejs.org/examples/models/gltf/LeePerrySmith/LeePerrySmith.glb",
+  (gltf) => {
+    brain = gltf.scene;
+
+    brain.traverse((obj) => {
+      if (obj.isMesh) {
+        obj.material = new THREE.MeshStandardMaterial({
+          color: 0x25dfe5,
+          emissive: 0x006b75,
+          emissiveIntensity: 0.8,
+          metalness: 0.25,
+          roughness: 0.38,
+          wireframe: false
+        });
+      }
+    });
+
+    brain.scale.setScalar(1.35);
+    brain.rotation.y = Math.PI;
+    brainGroup.add(brain);
+    loading.style.display = "none";
+  },
+  undefined,
+  (error) => {
+    loading.textContent = "3D model failed to load. Check the model URL or network.";
+    console.error(error);
+  }
+);
+
+function resize() {
+  const width = root.clientWidth;
+  const height = root.clientHeight;
+  camera.aspect = width / height;
+  camera.updateProjectionMatrix();
+  renderer.setSize(width, height);
+}
+
+new ResizeObserver(resize).observe(root);
+
+function animate(time) {
+  requestAnimationFrame(animate);
+
+  brainGroup.rotation.y = Math.sin(time * 0.00025) * 0.45;
+  brainGroup.position.y = Math.sin(time * 0.0012) * 0.08;
+
+  if (brain) {
+    brain.rotation.x = Math.sin(time * 0.00035) * 0.08;
+  }
+
+  renderer.render(scene, camera);
+}
+
+animate(0);
+</script>
