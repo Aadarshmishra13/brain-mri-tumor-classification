@@ -182,8 +182,10 @@ def make_gradcam_heatmap(model, image, model_name, class_index):
 
                 score = x[:, class_index]
 
+    
         gradients = tape.gradient(score, activations)
         if gradients is None:
+            st.error(f"No gradients available for {model_name}.")
             return None
 
         weights = tf.reduce_mean(gradients, axis=(1, 2))
