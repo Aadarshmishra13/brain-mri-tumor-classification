@@ -478,28 +478,67 @@ if uploaded_file is not None:
                 np.stack(list(all_probabilities.values())),
                 axis=0,
             )
-            all_probabilities["Soft-voting ensemble"] = (
-                ensemble_probabilities
-            )
+           
+progress.empty()
+status.success("Analysis completed.")
 
-            progress.empty()
-            status.success("Analysis completed.")
+st.divider()
+st.subheader("📊 Prediction Summary")
+st.caption("Predicted class and model confidence")
 
-            st.divider()
-            st.subheader("📊 Prediction summary")
+summary_cols = st.columns(4)
 
-            summary_cols = st.columns(4)
+for column, (model_name, probabilities) in zip(
+    summary_cols, all_probabilities.items()
+):
+    best_index = int(np.argmax(probabilities))
+    predicted_class = (
+        CLASS_NAMES[best_index].replace("_", " ").title()
+    )
+    confidence = probabilities[best_index] * 100
 
-            for column, (model_name, probabilities) in zip(
-                summary_cols, all_probabilities.items()
-            ):
-                best_index = int(np.argmax(probabilities))
-                with column:
-                    st.metric(
-                        model_name,
-                        CLASS_NAMES[best_index].replace("_", " ").title(),
-                        f"{probabilities[best_index] * 100:.2f}% output",
-                    )
+    with column:
+        st.markdown(
+            """
+            <div style="
+                background: #0A0A0A;
+                border: 1px solid #2A2A2A;
+                border-radius: 12px;
+                padding: 16px 12px;
+                min-height: 125px;
+            ">
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.caption(model_name)
+        st.markdown(
+            f"""
+            <div style="
+                color: #F5F7FA;
+                font-size: 19px;
+                font-weight: 650;
+                margin: 8px 0;
+            ">{predicted_class}</div>
+            <div style="
+                color: #55D6BE;
+                font-size: 14px;
+                font-weight: 600;
+            ">{confidence:.2f}% confidence</div>
+            """,
+            unsafe_allow_html=True,
+        )
+
+        st.markdown(
+            """
+            <div style="
+                height: 1px;
+                background: #222222;
+                margin-top: 12px;
+            "></div>
+            """,
+            unsafe_allow_html=True,
+        )
 
             st.caption(
                 "Displayed percentages are model output probabilities, "
