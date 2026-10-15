@@ -415,27 +415,6 @@ if uploaded_file is not None:
             )
 
 
-            st.subheader("Detailed probabilities")
-            detail_rows = []
-
-            for model_name, probabilities in all_probabilities.items():
-                for class_name, probability in zip(
-                    CLASS_NAMES, probabilities
-                ):
-                    detail_rows.append({
-                        "Model": model_name,
-                        "Class": class_name,
-                        "Output probability (%)": round(
-                            float(probability * 100), 2
-                        ),
-                    })
-
-            st.dataframe(
-                pd.DataFrame(detail_rows),
-                hide_index=True,
-                use_container_width=True,
-            )
-
             
             st.divider()
             st.subheader("🔥 Grad-CAM: Where Each Model Is Looking")
