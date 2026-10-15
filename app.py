@@ -13,7 +13,7 @@ from huggingface_hub import hf_hub_download
 
 
 
-```python
+
 st.markdown("""
 <style>
 [data-testid="stFileUploader"] {
@@ -40,7 +40,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
-```
+
 
 
 # --------------------------------------------------
