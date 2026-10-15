@@ -9,3 +9,4 @@ kagglehub
 streamlit
 opencv-python-headless
 huggingface_hub
+plotly
