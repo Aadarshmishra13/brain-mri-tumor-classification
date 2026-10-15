@@ -13,23 +13,20 @@ from huggingface_hub import hf_hub_download
 
 
 
+```python
 st.markdown("""
 <style>
-/* Compact, modern MRI uploader */
 [data-testid="stFileUploader"] {
     max-width: 560px;
     margin-top: 0.25rem;
 }
 
-[data-testid="stFileUploader"] > section {
-    padding: 0.35rem 0.75rem;
-    border: 1px dashed #64748b;
-    border-radius: 10px;
-    background: rgba(100, 116, 139, 0.06);
-}
-
-[data-testid="stFileUploader"] > section > div {
-    gap: 0.35rem;
+[data-testid="stFileUploader"] section {
+    border: 1px dashed #64748b !important;
+    border-radius: 10px !important;
+    background: rgba(100, 116, 139, 0.06) !important;
+    padding: 0.35rem 0.75rem !important;
+    box-shadow: none !important;
 }
 
 [data-testid="stFileUploader"] button {
@@ -41,12 +38,9 @@ st.markdown("""
 [data-testid="stFileUploader"] small {
     font-size: 0.75rem;
 }
-
-[data-testid="stFileUploader"] [data-testid="stFileUploaderDropzoneInstructions"] {
-    gap: 0.2rem;
-}
 </style>
 """, unsafe_allow_html=True)
+```
 
 
 # --------------------------------------------------
