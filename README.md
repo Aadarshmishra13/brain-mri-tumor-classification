@@ -360,7 +360,7 @@ The repository is organized to separate application code, experiments, documenta
 ```text
 ## 📁 Repository Structure
 
-```text
+
 brain-mri-tumor-classification/
 │
 ├── notebooks/
