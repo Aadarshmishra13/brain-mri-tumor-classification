@@ -463,7 +463,8 @@ if uploaded_file is not None:
 
 
             st.divider()
-            st.subheader("ℹ️ Model performance on the test set")
+          
+            st.subheader("📊 Test-set accuracy")
 
             performance = pd.DataFrame({
                 "Model": [
@@ -472,7 +473,7 @@ if uploaded_file is not None:
                     "EfficientNetB0",
                     "Soft-voting ensemble",
                 ],
-                "Held-out test accuracy": [
+                "Accuracy": [
                     "70.81%",
                     "91.56%",
                     "92.94%",
@@ -484,12 +485,14 @@ if uploaded_file is not None:
                 performance,
                 hide_index=True,
                 use_container_width=True,
+                height=185,
             )
 
             st.caption(
-                "These are previously measured test-set accuracies, not "
-                "a guarantee of performance on the uploaded image."
+                "Previously measured test-set accuracy; not a guarantee "
+                "for individual MRI predictions."
             )
+
 
     except Exception as error:
         st.error(
