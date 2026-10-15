@@ -407,7 +407,13 @@ if uploaded_file is not None:
             )
             chart_data.index.name = "Class"
 
-            st.bar_chart(chart_data, y_label="Output probability (%)")
+           
+            st.bar_chart(
+                chart_data,
+                y_label="Probability (%)",
+                height=280,
+            )
+
 
             st.subheader("Detailed probabilities")
             detail_rows = []
