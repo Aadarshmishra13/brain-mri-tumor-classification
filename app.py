@@ -313,11 +313,17 @@ with st.sidebar:
 # --------------------------------------------------
 # IMAGE UPLOAD
 # --------------------------------------------------
-st.subheader("🔬 Upload an MRI image")
+
+st.subheader("🔬 Upload MRI Scan")
+st.caption("Upload a brain MRI image to begin analysis.")
+
 uploaded_file = st.file_uploader(
-    "Choose a JPG, JPEG, or PNG image",
+    "Choose MRI image",
     type=["jpg", "jpeg", "png"],
+    help="Supported formats: JPG, JPEG, PNG",
+    label_visibility="collapsed",
 )
+
 
 if uploaded_file is not None:
     try:
