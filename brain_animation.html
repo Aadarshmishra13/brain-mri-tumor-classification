@@ -94,9 +94,13 @@ new ResizeObserver(resize).observe(root);
 function animate(time) {
   requestAnimationFrame(animate);
 
-  brainGroup.rotation.y = Math.sin(time * 0.00025) * 0.45;
+  // Continuous 360° rotation
+  brainGroup.rotation.y += 0.01;
+
+  // Gentle floating motion
   brainGroup.position.y = Math.sin(time * 0.0012) * 0.08;
 
+  // Slight natural tilt
   if (brain) {
     brain.rotation.x = Math.sin(time * 0.00035) * 0.08;
   }
