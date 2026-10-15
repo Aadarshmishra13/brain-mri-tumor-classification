@@ -16,43 +16,104 @@ from huggingface_hub import hf_hub_download
 
 st.markdown("""
 <style>
-/* Whole app background */
+/* ===== PURE BLACK MEDICAL AI THEME ===== */
+
 .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"] {
     background: #000000 !important;
+    color: #F5F7FA !important;
 }
 
-/* Sidebar background */
+/* Main content spacing */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+    max-width: 1200px;
+}
+
+/* Sidebar */
 [data-testid="stSidebar"] {
-    background: #000000 !important;
+    background: #080808 !important;
+}
+
+/* Headings */
+h1, h2, h3 {
+    color: #F8FAFC !important;
+    letter-spacing: -0.4px;
+}
+
+/* Supporting text */
+.stMarkdown p,
+[data-testid="stCaptionContainer"] {
+    color: #A7B0BE;
+}
+
+/* Subtle separators */
+hr {
+    border-color: #262626 !important;
 }
 
 /* MRI uploader */
 [data-testid="stFileUploader"] {
     max-width: 560px;
-    margin-top: 0.25rem;
+    margin-top: 0.4rem;
 }
 
 [data-testid="stFileUploader"] section {
-    border: 1px dashed #64748b !important;
-    border-radius: 10px !important;
-    background: #111111 !important;
-    padding: 0.35rem 0.75rem !important;
+    border: 1px dashed #3B7777 !important;
+    border-radius: 12px !important;
+    background: #0A0F10 !important;
+    padding: 0.5rem 0.75rem !important;
     box-shadow: none !important;
 }
 
+/* Upload button */
 [data-testid="stFileUploader"] button {
-    border-radius: 7px;
-    padding: 0.25rem 0.7rem;
+    border-radius: 8px;
+    border: 1px solid #315E5E;
+    padding: 0.3rem 0.8rem;
     font-size: 0.85rem;
 }
 
+/* Small upload text */
 [data-testid="stFileUploader"] small {
     font-size: 0.75rem;
 }
+
+/* Rounded image corners */
+[data-testid="stImage"] img {
+    border-radius: 10px;
+}
+
+/* Data tables */
+[data-testid="stDataFrame"] {
+    border: 1px solid #252525;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+/* Charts and metric cards */
+[data-testid="stMetric"] {
+    background: #0A0A0A;
+    border: 1px solid #252525;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+/* Buttons */
+.stButton > button {
+    border-radius: 8px;
+    border: 1px solid #315E5E;
+}
+
+/* Remove excessive visual clutter */
+[data-testid="stDecoration"] {
+    display: none;
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
