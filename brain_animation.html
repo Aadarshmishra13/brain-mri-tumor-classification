@@ -65,18 +65,18 @@ loader.load(
   (gltf) => {
     brain = gltf.scene;
 
-    brain.traverse((obj) => {
-      if (obj.isMesh) {
-        obj.material = new THREE.MeshStandardMaterial({
-          color: 0x25dfe5,
-          emissive: 0x006b75,
-        emissiveIntensity: 0.35,
-          metalness: 0.25,
-          roughness: 0.38,
-          wireframe: false
-        });
-      }
+   brain.traverse((obj) => {
+  if (obj.isMesh) {
+    obj.material = new THREE.MeshStandardMaterial({
+      color: 0x55bfc5,
+      emissive: 0x00383d,
+      emissiveIntensity: 0.15,
+      metalness: 0.05,
+      roughness: 0.72,
+      wireframe: false
     });
+  }
+});
 brain.scale.setScalar(8.0);
     brain.rotation.y = Math.PI;
     brainGroup.add(brain);
