@@ -76,9 +76,10 @@ loader.load(
   },
   undefined,
   (error) => {
-    loading.textContent = "3D model failed to load. Check the model URL or network.";
-    console.error(error);
-  }
+  loading.textContent =
+    "3D model error: " + (error?.message || String(error));
+  console.error("Brain model loading failed:", error);
+}
 );
 
 function resize() {
