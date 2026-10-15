@@ -513,48 +513,48 @@ if uploaded_file is not None:
             st.divider()
             st.subheader("📊 Prediction Summary")
             
-st.caption("Predicted class and model output probability")
+            st.caption("Predicted class and model output probability")
 
-# Soft-voting ensemble prediction
-ensemble_index = int(np.argmax(ensemble_probabilities))
-ensemble_class = (
-    CLASS_NAMES[ensemble_index]
-    .replace("_", " ")
-    .title()
-)
-ensemble_probability = ensemble_probabilities[ensemble_index] * 100
+            # Soft-voting ensemble prediction
+            ensemble_index = int(np.argmax(ensemble_probabilities))
+            ensemble_class = (
+                CLASS_NAMES[ensemble_index]
+                .replace("_", " ")
+                .title()
+            )
+            ensemble_probability = ensemble_probabilities[ensemble_index] * 100
 
-st.markdown(
-    f"""
-    <div style="
-        background: linear-gradient(135deg, #082b2b, #0A1115);
-        border: 1px solid #32CFC3;
-        border-radius: 14px;
-        padding: 20px 22px;
-        margin: 12px 0 20px 0;
-    ">
-        <div style="
-            color: #55D6BE;
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1px;
-        ">🧠 SOFT-VOTING ENSEMBLE PREDICTION</div>
-        <div style="
-            color: #F5F7FA;
-            font-size: 28px;
-            font-weight: 750;
-            margin: 10px 0;
-        ">{ensemble_class}</div>
-        <div style="color: #55D6BE; font-size: 17px; font-weight: 650;">
-            {ensemble_probability:.2f}% output probability
-        </div>
-        <div style="color: #A7B0BE; font-size: 12px; margin-top: 8px;">
-            Mean of the probability outputs from all three models
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+            st.markdown(
+                f"""
+                <div style="
+                    background: linear-gradient(135deg, #082b2b, #0A1115);
+                    border: 1px solid #32CFC3;
+                    border-radius: 14px;
+                    padding: 20px 22px;
+                    margin: 12px 0 20px 0;
+                ">
+                    <div style="
+                        color: #55D6BE;
+                        font-size: 13px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    ">🧠 SOFT-VOTING ENSEMBLE PREDICTION</div>
+                    <div style="
+                        color: #F5F7FA;
+                        font-size: 28px;
+                        font-weight: 750;
+                        margin: 10px 0;
+                    ">{ensemble_class}</div>
+                    <div style="color: #55D6BE; font-size: 17px; font-weight: 650;">
+                        {ensemble_probability:.2f}% output probability
+                    </div>
+                    <div style="color: #A7B0BE; font-size: 12px; margin-top: 8px;">
+                        Mean of the probability outputs from all three models
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
 
             summary_cols = st.columns(4)
@@ -608,60 +608,60 @@ st.markdown(
             st.subheader("📈 Class probability comparison")
 
            
-chart_data = pd.DataFrame(
-    {
-        model_name: probabilities * 100
-        for model_name, probabilities in all_probabilities.items()
-    },
-    index=CLASS_NAMES,
-)
+            chart_data = pd.DataFrame(
+                {
+                    model_name: probabilities * 100
+                    for model_name, probabilities in all_probabilities.items()
+                },
+                index=CLASS_NAMES,
+            )
 
-# Grouped bar chart
-x = np.arange(len(CLASS_NAMES))
-width = 0.25
+            # Grouped bar chart
+            x = np.arange(len(CLASS_NAMES))
+            width = 0.25
 
-fig, ax = plt.subplots(figsize=(10, 4))
+            fig, ax = plt.subplots(figsize=(10, 4))
 
-colors = ["#7EC8FF", "#55D6BE", "#FF9E9E"]
+            colors = ["#7EC8FF", "#55D6BE", "#FF9E9E"]
 
-for i, model_name in enumerate(chart_data.columns):
-    offset = (i - (len(chart_data.columns) - 1) / 2) * width
-    ax.bar(
-        x + offset,
-        chart_data[model_name].values,
-        width,
-        label=model_name,
-        color=colors[i],
-    )
+            for i, model_name in enumerate(chart_data.columns):
+                offset = (i - (len(chart_data.columns) - 1) / 2) * width
+                ax.bar(
+                    x + offset,
+                    chart_data[model_name].values,
+                    width,
+                    label=model_name,
+                    color=colors[i],
+                )
 
-ax.set_ylabel("Probability (%)", color="#D7DEE8")
-ax.set_xlabel("Class", color="#D7DEE8")
-ax.set_xticks(x)
-ax.set_xticklabels(CLASS_NAMES, color="#D7DEE8")
+            ax.set_ylabel("Probability (%)", color="#D7DEE8")
+            ax.set_xlabel("Class", color="#D7DEE8")
+            ax.set_xticks(x)
+            ax.set_xticklabels(CLASS_NAMES, color="#D7DEE8")
 
-# Keep the y-axis between 0% and 100%
-ax.set_ylim(0, 100)
-ax.set_yticks(np.arange(0, 101, 20))
-ax.tick_params(axis="y", colors="#D7DEE8")
+            # Keep the y-axis between 0% and 100%
+            ax.set_ylim(0, 100)
+            ax.set_yticks(np.arange(0, 101, 20))
+            ax.tick_params(axis="y", colors="#D7DEE8")
 
-# Match the app's dark theme
-ax.set_facecolor("#0F1117")
-fig.patch.set_facecolor("#000000")
-ax.grid(axis="y", color="#343843", alpha=0.7)
-ax.set_axisbelow(True)
+            # Match the app's dark theme
+            ax.set_facecolor("#0F1117")
+            fig.patch.set_facecolor("#000000")
+            ax.grid(axis="y", color="#343843", alpha=0.7)
+            ax.set_axisbelow(True)
 
-ax.legend(
-    facecolor="#0F1117",
-    labelcolor="#F5F7FA",
-    frameon=False,
-)
+            ax.legend(
+                facecolor="#0F1117",
+                labelcolor="#F5F7FA",
+                frameon=False,
+            )
 
-for spine in ax.spines.values():
-    spine.set_color("#343843")
+            for spine in ax.spines.values():
+                spine.set_color("#343843")
 
-fig.tight_layout()
-st.pyplot(fig, use_container_width=True)
-plt.close(fig)
+            fig.tight_layout()
+            st.pyplot(fig, use_container_width=True)
+            plt.close(fig)
 
 
             st.divider()
@@ -743,4 +743,3 @@ st.caption(
     "Research and educational prototype • Not for clinical use • "
     "Do not use these outputs to make medical decisions."
 )
-
