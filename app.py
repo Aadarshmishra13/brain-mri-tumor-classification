@@ -16,6 +16,19 @@ from huggingface_hub import hf_hub_download
 
 st.markdown("""
 <style>
+/* Whole app background */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"] {
+    background: #000000 !important;
+}
+
+/* Sidebar background */
+[data-testid="stSidebar"] {
+    background: #000000 !important;
+}
+
+/* MRI uploader */
 [data-testid="stFileUploader"] {
     max-width: 560px;
     margin-top: 0.25rem;
@@ -24,7 +37,7 @@ st.markdown("""
 [data-testid="stFileUploader"] section {
     border: 1px dashed #64748b !important;
     border-radius: 10px !important;
-    background: rgba(100, 116, 139, 0.06) !important;
+    background: #111111 !important;
     padding: 0.35rem 0.75rem !important;
     box-shadow: none !important;
 }
@@ -40,6 +53,7 @@ st.markdown("""
 }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 
