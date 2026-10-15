@@ -12,6 +12,7 @@ from PIL import Image
 from huggingface_hub import hf_hub_download
 
 import streamlit.components.v1 as components
+import plotly.graph_objects as go
 
 st.set_page_config(
     page_title="Brain Tumor MRI Analysis",
@@ -607,61 +608,90 @@ if uploaded_file is not None:
             st.divider()
             st.subheader("📈 Class probability comparison")
 
-           
-            chart_data = pd.DataFrame(
-                {
-                    model_name: probabilities * 100
-                    for model_name, probabilities in all_probabilities.items()
-                },
-                index=CLASS_NAMES,
-            )
+          
+chart_data = pd.DataFrame(
+    {
+        model_name: probabilities * 100
+        for model_name, probabilities in all_probabilities.items()
+    },
+    index=CLASS_NAMES,
+)
 
-            # Grouped bar chart
-            x = np.arange(len(CLASS_NAMES))
-            width = 0.25
+model_accuracies = {
+    "Custom CNN": "70.81%",
+    "ResNet50": "91.56%",
+    "EfficientNetB0": "92.94%",
+}
 
-            fig, ax = plt.subplots(figsize=(10, 4))
+# Professional, muted colours for the dark theme
+model_colors = {
+    "Custom CNN": "#7899B8",
+    "ResNet50": "#55B8A8",
+    "EfficientNetB0": "#A69AD8",
+}
 
-            colors = ["#7EC8FF", "#55D6BE", "#FF9E9E"]
+fig = go.Figure()
 
-            for i, model_name in enumerate(chart_data.columns):
-                offset = (i - (len(chart_data.columns) - 1) / 2) * width
-                ax.bar(
-                    x + offset,
-                    chart_data[model_name].values,
-                    width,
-                    label=model_name,
-                    color=colors[i],
-                )
+for model_name in chart_data.columns:
+    probabilities = all_probabilities[model_name] * 100
+    predicted_index = int(np.argmax(all_probabilities[model_name]))
+    predicted_class = CLASS_NAMES[predicted_index].replace("_", " ").title()
 
-            ax.set_ylabel("Probability (%)", color="#D7DEE8")
-            ax.set_xlabel("Class", color="#D7DEE8")
-            ax.set_xticks(x)
-            ax.set_xticklabels(CLASS_NAMES, color="#D7DEE8")
+    fig.add_trace(
+        go.Bar(
+            name=model_name,
+            x=CLASS_NAMES,
+            y=probabilities,
+            marker_color=model_colors[model_name],
+            customdata=[
+                [predicted_class, model_accuracies[model_name]]
+                for _ in CLASS_NAMES
+            ],
+            hovertemplate=(
+                "<b>%{fullData.name}</b><br>"
+                "Class: %{x}<br>"
+                "Output probability: %{y:.2f}%<br>"
+                "Model's predicted class: %{customdata[0]}<br>"
+                "Test-set accuracy: %{customdata[1]}"
+                "<extra></extra>"
+            ),
+        )
+    )
 
-            # Keep the y-axis between 0% and 100%
-            ax.set_ylim(0, 100)
-            ax.set_yticks(np.arange(0, 101, 20))
-            ax.tick_params(axis="y", colors="#D7DEE8")
+fig.update_layout(
+    barmode="group",
+    height=420,
+    margin=dict(l=20, r=20, t=25, b=20),
+    paper_bgcolor="#000000",
+    plot_bgcolor="#0F1117",
+    font=dict(color="#D7DEE8"),
+    xaxis=dict(
+        title="Class",
+        showgrid=False,
+    ),
+    yaxis=dict(
+        title="Output probability (%)",
+        range=[0, 100],
+        dtick=20,
+        gridcolor="#292E38",
+        zerolinecolor="#292E38",
+    ),
+    legend=dict(
+        orientation="h",
+        yanchor="bottom",
+        y=1.02,
+        xanchor="left",
+        x=0,
+    ),
+    hoverlabel=dict(
+        bgcolor="#17212B",
+        bordercolor="#55B8A8",
+        font=dict(color="#FFFFFF", size=13),
+    ),
+)
 
-            # Match the app's dark theme
-            ax.set_facecolor("#0F1117")
-            fig.patch.set_facecolor("#000000")
-            ax.grid(axis="y", color="#343843", alpha=0.7)
-            ax.set_axisbelow(True)
+st.plotly_chart(fig, use_container_width=True)
 
-            ax.legend(
-                facecolor="#0F1117",
-                labelcolor="#F5F7FA",
-                frameon=False,
-            )
-
-            for spine in ax.spines.values():
-                spine.set_color("#343843")
-
-            fig.tight_layout()
-            st.pyplot(fig, use_container_width=True)
-            plt.close(fig)
 
 
             st.divider()
