@@ -384,19 +384,35 @@ def display_gradcam(model, image, model_name, class_index):
 
 
 
+
 # --------------------------------------------------
 # HEADER
 # --------------------------------------------------
-st.title("🧠 Brain Tumor MRI Analysis")
-st.caption(
-    "Multi-model MRI classification • Research and educational prototype"
-)
-st.write(
-    "Ensemble of Base CNN + ResNet50 + EfficientNetB0, "
-    "with Grad-CAM explainability"
-)
+st.markdown("""
+<div style="margin-bottom: 24px;">
+    <h1 style="
+        color: #F5F7FA;
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+    ">🧠 Brain Tumor MRI Analysis</h1>
+
+    <p style="
+        color: #A7B0BE;
+        font-size: 16px;
+        margin: 0 0 10px 0;
+    ">Multi-model MRI classification • Research and educational prototype</p>
+
+    <p style="
+        color: #55D6BE;
+        font-size: 14px;
+        margin: 0;
+    ">Ensemble of Base CNN + ResNet50 + EfficientNetB0, with Grad-CAM explainability</p>
+</div>
+""", unsafe_allow_html=True)
 
 st.divider()
+
 
 
 
