@@ -11,7 +11,14 @@ import { GLTFLoader } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/
 
 const root = document.getElementById("brain-scene");
 const loading = document.getElementById("brain-loading");
+window.addEventListener("error", (event) => {
+  loading.textContent = "JavaScript error: " + event.message;
+});
 
+window.addEventListener("unhandledrejection", (event) => {
+  loading.textContent =
+    "Loading error: " + String(event.reason);
+});
 const scene = new THREE.Scene();
 scene.background = new THREE.Color("#000000");
 
