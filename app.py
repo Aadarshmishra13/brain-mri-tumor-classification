@@ -607,21 +607,62 @@ st.markdown(
             st.divider()
             st.subheader("📈 Class probability comparison")
 
-            chart_data = pd.DataFrame(
-                {
-                    model_name: probabilities * 100
-                    for model_name, probabilities
-                    in all_probabilities.items()
-                },
-                index=CLASS_NAMES,
-            )
-            chart_data.index.name = "Class"
+           
+chart_data = pd.DataFrame(
+    {
+        model_name: probabilities * 100
+        for model_name, probabilities in all_probabilities.items()
+    },
+    index=CLASS_NAMES,
+)
 
-            st.bar_chart(
-                chart_data,
-                y_label="Probability (%)",
-                height=280,
-            )
+# Grouped bar chart
+x = np.arange(len(CLASS_NAMES))
+width = 0.25
+
+fig, ax = plt.subplots(figsize=(10, 4))
+
+colors = ["#7EC8FF", "#55D6BE", "#FF9E9E"]
+
+for i, model_name in enumerate(chart_data.columns):
+    offset = (i - (len(chart_data.columns) - 1) / 2) * width
+    ax.bar(
+        x + offset,
+        chart_data[model_name].values,
+        width,
+        label=model_name,
+        color=colors[i],
+    )
+
+ax.set_ylabel("Probability (%)", color="#D7DEE8")
+ax.set_xlabel("Class", color="#D7DEE8")
+ax.set_xticks(x)
+ax.set_xticklabels(CLASS_NAMES, color="#D7DEE8")
+
+# Keep the y-axis between 0% and 100%
+ax.set_ylim(0, 100)
+ax.set_yticks(np.arange(0, 101, 20))
+ax.tick_params(axis="y", colors="#D7DEE8")
+
+# Match the app's dark theme
+ax.set_facecolor("#0F1117")
+fig.patch.set_facecolor("#000000")
+ax.grid(axis="y", color="#343843", alpha=0.7)
+ax.set_axisbelow(True)
+
+ax.legend(
+    facecolor="#0F1117",
+    labelcolor="#F5F7FA",
+    frameon=False,
+)
+
+for spine in ax.spines.values():
+    spine.set_color("#343843")
+
+fig.tight_layout()
+st.pyplot(fig, use_container_width=True)
+plt.close(fig)
+
 
             st.divider()
             st.subheader("🔥 Grad-CAM: Where Each Model Is Looking")
