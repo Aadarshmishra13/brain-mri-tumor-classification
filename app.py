@@ -434,17 +434,40 @@ if uploaded_file is not None:
                 "highlighted region contains a tumor."
             )
 
-            selected_probabilities = all_probabilities[selected_cam_model]
-            selected_class_index = int(
-                np.argmax(selected_probabilities)
+           
+            st.subheader("🔥 Grad-CAM: Where Each Model Is Looking")
+            st.write(
+                "These heatmaps highlight image regions associated with "
+                "each model's prediction. They are approximate visualizations, "
+                "not clinical explanations."
             )
 
-            display_gradcam(
-                loaded_models[selected_cam_model],
-                image,
-                selected_cam_model,
-                selected_class_index,
-            )
+            cam_models = [
+                "ResNet50",
+                "EfficientNetB0",
+                "Custom CNN",
+            ]
+
+            cam_cols = st.columns(3)
+
+            for col, model_name in zip(cam_cols, cam_models):
+                probabilities = all_probabilities[model_name]
+                predicted_class_index = int(np.argmax(probabilities))
+                predicted_class = CLASS_NAMES[
+                    predicted_class_index
+                ].replace("_", " ").title()
+
+                with col:
+                    st.markdown(f"**{model_name}**")
+                    st.caption(f"Prediction: {predicted_class}")
+
+                    display_gradcam(
+                        loaded_models[model_name],
+                        image,
+                        model_name,
+                        predicted_class_index,
+                    )
+
 
             st.divider()
             st.subheader("ℹ️ Model performance on the test set")
