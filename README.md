@@ -418,10 +418,13 @@ The project includes a Streamlit application that allows users to upload an MRI 
 
 ### Application capabilities
 
-- Upload an MRI image through a web interface.
-- Run inference using the configured EfficientNetB0 model.
-- Display the predicted class.
-- Present the model's output scores for the available classes.
+- Upload brain MRI images for classification.
+- Compare predictions from Custom CNN, ResNet50, and EfficientNetB0.
+- View soft-voting ensemble predictions.
+- Explore model scores with an interactive chart.
+- Visualize Grad-CAM heatmaps for all three models.
+- Download a PDF analysis report.
+- Explore the interactive 3D brain animation.
 
 The application is a demonstration of model inference. Prediction scores are model outputs and should not be interpreted as clinically calibrated probabilities or a medical diagnosis.
 
